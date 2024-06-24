@@ -1,0 +1,60 @@
+name: ruff
+license: MIT
+version: 0.4.9
+summary: An extremely fast Python linter, written in Rust.
+description: |
+  Ruff aims to be orders of magnitude faster than alternative tools while integrating more
+  functionality behind a single, common interface.
+
+  - ⚡️ 10-100x faster than existing linters (like Flake8) and formatters (like Black)
+  - 🐧 Installable via `snap`
+  - 🛠️ `pyproject.toml` support
+  - 🤝 Python 3.12 compatibility
+  - ⚖️ Drop-in parity with Flake8, isort, and Black
+  - 📦 Built-in caching, to avoid re-analyzing unchanged files
+  - 🔧 Fix support, for automatic error correction (e.g., automatically remove unused imports)
+  - 📏 Over 700 built-in rules, with native re-implementations of popular Flake8 plugins, like flake8-bugbear
+  - ⌨️ First-party editor integrations for VS Code and more
+  - 🌎 Monorepo-friendly, with hierarchical and cascading configuration
+
+base: ubuntu@22.04
+platforms:
+  amd64:
+  arm64:
+
+parts:
+  ruff:
+    plugin: rust
+    rust-path:
+      - crates/ruff
+    source: https://github.com/astral-sh/ruff
+    source-type: git
+    source-tag: v$CRAFT_PROJECT_VERSION
+    source-depth: 1
+    stage:
+      - bin/ruff
+    organize:
+      ruff: bin/ruff
+  ruff-lsp:
+    after: [ruff]
+    plugin: python
+    source: https://github.com/astral-sh/ruff-lsp
+    source-type: git
+    source-tag: v0.0.53  # LSP
+    source-depth: 1
+    override-build: |
+      # Remove the ruff dependency since we're installing it ourselves.
+      sed -i '/"ruff[<>=>~]=[0-9.]*",/d' pyproject.toml
+      craftctl default
+    build-environment:
+      - PARTS_PYTHON_VENV_ARGS: --system-site-packages
+    stage:
+      - -bin/a*
+      - -bin/Activate.ps1
+      - -bin/pip*
+      - -bin/python
+      - -bin/python3.10
+      - -bin/wheel
+      - -lib/python3.10/site-packages/pip*
+      - -lib/python3.10/site-packages/setuptools*
+      - -lib/python3.10/site-packages/wheel*
